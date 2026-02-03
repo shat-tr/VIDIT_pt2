@@ -1,0 +1,912 @@
+<!DOCTYPE html>
+
+<html lang="en">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Learning Style Analyzer</title>
+<style>
+        :root {
+            --bg-primary: #121212;
+            --bg-secondary: #1E1E1E;
+            --text-primary: #E0E0E0;
+            --text-secondary: #A0A0A0;
+            --accent-green: #00A86B;
+            --accent-dark-green: #007F55;
+            --button-hover: #2C2C2C;
+            --border-color: #333;
+            --shadow-color: rgba(0,0,0,0.5);
+            --radius: 8px;
+            --font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        }
+        body.light-mode {
+            --bg-primary: #F5F5F5;
+            --bg-secondary: #FFFFFF;
+            --text-primary: #212121;
+            --text-secondary: #5A5A5A;
+            --accent-green: #4CAF50;
+            --accent-dark-green: #388E3C;
+            --button-hover: #E0E0E0;
+            --border-color: #DDD;
+            --shadow-color: rgba(0,0,0,0.1);
+        }
+        *{box-sizing:border-box;margin:0;padding:0}
+        body{
+            font-family:var(--font-family);
+            background-color:var(--bg-primary);
+            color:var(--text-primary);
+            transition:background-color .3s,color .3s;
+            display:flex;justify-content:center;align-items:center;
+            min-height:100vh;padding:20px;
+        }
+        .container{
+            background-color:var(--bg-secondary);
+            padding:40px;border-radius:var(--radius);
+            box-shadow:0 10px 30px var(--shadow-color);max-width:900px;width:100%;
+        }
+        h1,h2{color:var(--accent-green);margin-bottom:20px;text-align:center}
+        label{display:block;margin-bottom:8px;font-weight:600;color:var(--text-secondary)}
+        input[type="text"], select{
+            width:100%;padding:12px;margin-bottom:20px;border:1px solid var(--border-color);
+            border-radius:var(--radius);background-color:var(--bg-primary);color:var(--text-primary);font-size:16px;
+        }
+        .btn{padding:12px 25px;border:none;border-radius:var(--radius);cursor:pointer;font-size:16px;font-weight:700;transition:background-color .2s,transform .1s;margin-top:10px;display:inline-block}
+        .btn-primary{background-color:var(--accent-green);color:var(--bg-primary)}
+        .btn-primary:hover{background-color:var(--accent-dark-green);transform:translateY(-1px)}
+        .btn-secondary{background-color:var(--bg-primary);color:var(--accent-green);border:2px solid var(--accent-green);margin-left:10px}
+        .btn-secondary:hover{background-color:var(--accent-green);color:var(--bg-primary)}
+        .mode-toggle{position:absolute;top:20px;right:20px;display:flex;align-items:center;font-size:14px}
+        .switch{position:relative;display:inline-block;width:50px;height:28px;margin-left:10px}
+        .switch input{opacity:0;width:0;height:0}
+        .slider{position:absolute;cursor:pointer;top:0;left:0;right:0;bottom:0;background-color:var(--border-color);transition:.4s;border-radius:34px}
+        .slider:before{position:absolute;content:"";height:20px;width:20px;left:4px;bottom:4px;background-color:white;transition:.4s;border-radius:50%}
+        input:checked + .slider{background-color:var(--accent-green)}
+        input:checked + .slider:before{transform:translateX(22px)}
+        .question-container{border:1px solid var(--border-color);padding:20px;margin-bottom:15px;border-radius:var(--radius);background-color:var(--bg-primary)}
+        .question-container h3{margin-bottom:15px;color:var(--accent-green)}
+        .option-group{display:flex;flex-direction:column;gap:10px}
+        .option-label{display:flex;align-items:center;padding:10px;border-radius:5px;cursor:pointer;border:1px solid var(--border-color);transition:background-color .2s,border-color .2s}
+        .option-label:hover{background-color:var(--button-hover)}
+        .option-label input[type="radio"]{margin-right:10px;accent-color:var(--accent-green)}
+        #results-page p{margin-bottom:15px;line-height:1.6}
+        .strategy-list{list-style-type:none;padding-left:0}
+        .strategy-list li{background-color:var(--bg-primary);padding:10px 15px;margin-bottom:10px;border-left:4px solid var(--accent-green);border-radius:4px}
+        .action-buttons{display:flex;justify-content:center;gap:20px;margin-top:30px}
+    
+/* --- VIDIT Upgrades: Distribution + Plan + Recommendations --- */
+.card-section{
+  margin-top: 18px;
+  padding: 16px;
+  border-radius: 14px;
+  border: 1px solid rgba(255,255,255,0.12);
+  background: rgba(255,255,255,0.04);
+}
+body.light .card-section{
+  border: 1px solid rgba(0,0,0,0.10);
+  background: rgba(0,0,0,0.03);
+}
+.distribution-bars{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:10px;
+}
+.bar-row{
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+.bar-label{
+  width: 36px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+.bar-track{
+  flex:1;
+  height: 12px;
+  border-radius: 999px;
+  overflow:hidden;
+  background: rgba(255,255,255,0.10);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+body.light .bar-track{
+  background: rgba(0,0,0,0.08);
+  border: 1px solid rgba(0,0,0,0.10);
+}
+.bar-fill{
+  height: 100%;
+  width: 0%;
+  border-radius: 999px;
+  background: var(--accent-green);
+  transition: width 700ms ease;
+}
+.bar-value{
+  width: 70px;
+  text-align:right;
+  font-variant-numeric: tabular-nums;
+  opacity:0.9;
+}
+#distribution-meta{
+  margin-top:8px;
+  opacity:0.95;
+}
+.plan-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-top:10px;
+}
+.plan-item{
+  padding:12px 12px;
+  border-radius:12px;
+  border:1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.03);
+}
+body.light .plan-item{
+  border:1px solid rgba(0,0,0,0.10);
+  background: rgba(0,0,0,0.02);
+}
+.plan-day{
+  font-weight:800;
+  margin-bottom:4px;
+}
+.plan-task{
+  opacity:0.95;
+  line-height:1.35;
+}
+</style>
+<script src="https://cdn.jsdelivr.net/npm/emailjs-com@3/dist/email.min.js"></script>
+<script>
+(function() {
+  emailjs.init("PAj-7Ybl1xhNLJwVO"); // your Public Key
+})();
+</script>
+</head>
+<body class="dark-mode">
+<div class="mode-toggle">
+<span id="mode-text">Dark Mode</span>
+<label class="switch">
+<input checked="" id="mode-switch" type="checkbox"/>
+<span class="slider"></span>
+</label>
+</div>
+<div class="container">
+<div id="login-page">
+<h1 id="login-heading">Welcome to VIDIT</h1>
+<p id="login-subtitle">Please enter a username, select your preferred language and subject to begin.</p>
+<form id="login-form">
+<label for="username" id="username-label">Username:</label>
+<input id="username" required="" type="text"/>
+<label for="language" id="language-label">Select Language:</label>
+<select id="language" required=""></select>
+<select id="subject" required=""><option value="programming">Programming</option><option value="math">Mathematics</option><option value="biology">Biology</option><option value="history">History</option><option value="language">Language Learning</option><option value="business">Business/Management</option></select><label for="subject" id="subject-label">Select Subject:</label><button class="btn btn-primary" id="start-quiz-btn" type="submit">Start Quiz</button>
+</form>
+</div>
+<div id="quiz-page" style="display:none;">
+<h1 id="quiz-heading">VIDIT Quiz</h1>
+<form id="quiz-form"></form>
+<div id="quiz-navigation" style="text-align:center;">
+<button class="btn btn-primary" disabled="" id="next-question-btn" type="button">Next Question</button>
+</div>
+</div>
+<div id="results-page" style="display:none;">
+<h1 id="results-heading">Your VIDIT Analysis</h1>
+<div id="result-summary">
+<p id="final-style-text"></p>
+<p id="style-description"></p>
+</div>
+<div class="card-section" id="distribution-section">
+<h2 id="distribution-heading">Score Distribution</h2>
+<div id="distribution-meta"></div>
+<div class="distribution-bars" id="distribution-bars"></div>
+</div>
+<div class="card-section" id="recommendations-section">
+<h2 id="recommendations-heading">Subject-based Recommendations</h2>
+<ul class="strategy-list" id="recommendations-list"></ul>
+</div>
+<div class="card-section" id="plan-section">
+<h2 id="plan-heading">Your 7-Day Personalized Study Plan</h2>
+<div class="plan-list" id="plan-list"></div>
+</div>
+
+<div class="card-section" id="personal strategy">
+<h2 id="strategy-heading">Personalized Learning Strategies</h2>
+<ul class="strategy-list" id="strategy-list"></ul>
+</div>
+<button class="btn btn-primary" id="speak-results-btn" type="button">
+<span id="speak-button-text">Read Analysis Aloud</span> 🔊
+            </button>
+<div class="action-buttons">
+<button class="btn btn-secondary" id="retake-quiz-btn" type="button">Retake Quiz</button>
+<button class="btn btn-primary" id="share-results-btn" type="button">Share Result via Email</button>
+</div>
+</div>
+</div>
+<script>
+
+const LANGUAGES = {
+    en: { name: "English", lang: "en", start: "Start Quiz", next: "Next Question", result: "Your Learning Style Analysis", retake: "Retake Quiz", share: "Share Result via Email", login: "Welcome to Vidit", subtitle: "Please enter a username and select your preferred language to begin.", username: "Username:", language: "Select Language:", mode: "Dark Mode", lightMode: "Light Mode", read: "Read Analysis Aloud" },
+    hi: { name: "Hindi (हिंदी)", lang: "hi", start: "क्विज शुरू करें", next: "अगला प्रश्न", result: "आपके सीखने की शैली का विश्लेषण", retake: "क्विज दोबारा लें", share: "ईमेल द्वारा परिणाम साझा करें", login: "Vidit विश्लेषक में आपका स्वागत है", subtitle: "कृपया एक उपयोगकर्ता नाम दर्ज करें और शुरू करने के लिए अपनी पसंदीदा भाषा चुनें।", username: "उपयोगकर्ता नाम:", language: "भाषा चुनें:", mode: "डार्क मोड", lightMode: "लाइट मोड", read: "विश्लेषण जोर से पढ़ें" },
+    mr: { name: "Marathi (मराठी)", lang: "mr", start: "क्विझ सुरू करा", next: "पुढचा प्रश्न", result: "तुमच्या शिकण्याच्या शैलीचे विश्लेषण", retake: "क्विझ पुन्हा घ्या", share: "ईमेलद्वारे निकाल सामायिक करा", login: "Vidit विश्लेषकामध्ये आपले स्वागत आहे", subtitle: "कृपया एक वापरकर्तानाव प्रविष्ट करा आणि सुरू करण्यासाठी आपली पसंतीची भाषा निवडा.", username: "वापरकर्तानाव:", language: "भाषा निवडा:", mode: "डार्क मोड", lightMode: "लाइट मोड", read: "विश्लेषण मोठ्याने वाचा" },
+    bn: { name: "Bengali (বাংলা)", lang: "bn", start: "কুইজ শুরু করুন", next: "পরবর্তী প্রশ্ন", result: "আপনার শেখার শৈলীর বিশ্লেষণ", retake: "কুইজ পুনরায় নিন", share: "ইমেলের মাধ্যমে ফলাফল শেয়ার করুন", login: "Vidit বিশ্লেষকে স্বাগতম", subtitle: "শুরু করার জন্য দয়া করে একটি ব্যবহারকারীর নাম লিখুন এবং আপনার পছন্দের ভাষা নির্বাচন করুন।", username: "ব্যবহারকারীর নাম:", language: "ভাষা নির্বাচন করুন:", mode: "ডার্ক মোড", lightMode: "লাইট মোড", read: "বিশ্লেষণ জোরে পড়ুন" },
+    ta: { name: "Tamil (தமிழ்)", lang: "ta", start: "வினாடி வினாவைத் தொடங்கு", next: "அடுத்த கேள்வி", result: "உங்கள் கற்றல் பாணி பகுப்பாய்வு", retake: "வினாடி வினாவை மீண்டும் எடு", share: "மின்னஞ்சல் வழியாக முடிவைப் பகிரவும்", login: "Vidit பகுப்பாய்வுக்கு வரவேற்கிறோம்", subtitle: "தொடங்குவதற்கு ஒரு பயனர்பெயரை உள்ளிட்டு, நீங்கள் விரும்பும் மொழியைத் தேர்ந்தெடுக்கவும்.", username: "பயனர்பெயர்:", language: "மொழியைத் தேர்ந்தெடுக்கவும்:", mode: "இருண்ட பயன்முறை", lightMode: "லைட் மோடு", read: "பகுப்பாய்வை சத்தமாகப் படிக்கவும்" },
+    gu: { name: "Gujarati (ગુજરાતી)", lang: "gu", start: "ક્વિઝ શરૂ કરો", next: "આગલો પ્રશ્ન", result: "તમારા શીખવાની શૈલીનું વિશ્લેષણ", retake: "ક્વિઝ ફરીથી લો", share: "ઇમેઇલ દ્વારા પરિણામ શેર કરો", login: "Vidit વિશ્લેષકમાં આપનું સ્વાગત છે", subtitle: "કૃપા કરીને એક વપરાશકર્તા નામ દાખલ કરો અને શરૂ કરવા માટે તમારી પસંદગીની ભાષા પસંદ કરો.", username: "વપરાશકર્તા નામ:", language: "ભાષા પસંદ કરો:", mode: "ડાર્ક મોડ", lightMode: "લાઇટ મોડ", read: "વિશ્લેષણ મોટેથી વાંચો" },
+    es: { name: "Spanish (Español)", lang: "es", start: "Comenzar Quiz", next: "Siguiente Pregunta", result: "Análisis de su Estilo de Aprendizaje", retake: "Repetir Quiz", share: "Compartir Resultado por Email", login: "Bienvenido al Analizador Vidit", subtitle: "Por favor, ingrese un nombre de usuario y seleccione su idioma preferido para comenzar.", username: "Nombre de usuario:", language: "Seleccionar Idioma:", mode: "Modo Oscuro", lightMode: "Modo Claro", read: "Leer Análisis en Voz Alta" },
+    fr: { name: "French (Français)", lang: "fr", start: "Démarrer le Quiz", next: "Question Suivante", result: "Analyse de votre Style d'Apprentissage", retake: "Repasser le Quiz", share: "Partager le Résultat par Email", login: "Bienvenue sur l'Analyseur Vidit", subtitle: "Veuillez entrer un nom d'utilisateur et sélectionner votre langue préférée pour commencer.", username: "Nom d'utilisateur :", language: "Sélectionner la Langue :", mode: "Mode Sombre", lightMode: "Mode Clair", read: "Lire l'Analyse à Voix Haute" },
+    zh: { name: "Chinese (中文)", lang: "zh", start: "开始测验", next: "下一个问题", result: "您的学习风格分析", retake: "重新进行测验", share: "通过电子邮件分享结果", login: "欢迎使用 Vidit 分析仪", subtitle: "请输入用户名并选择您的首选语言以开始。", username: "用户名：", language: "选择语言：", mode: "深色模式", lightMode: "浅色模式", read: "朗读分析" },
+    ru: { name: "Russian (Русский)", lang: "ru", start: "Начать тест", next: "Следующий вопрос", result: "Анализ Вашего Стиля Обучения", retake: "Пройти тест заново", share: "Поделиться результатом по email", login: "Добро пожаловать в анализатор Vidit", subtitle: "Пожалуйста, введите имя пользователя и выберите предпочитаемый язык, чтобы начать.", username: "Имя пользователя:", language: "Выбрать язык:", mode: "Тёмный режим", lightMode: "Светлый режим", read: "Прочитать анализ вслух" }
+};
+
+/* English originals (all 15) */
+const VAKR_QUESTIONS_EN = [
+    { q: "When trying to remember a phone number, I usually:", options: [{ text: "Visualize the numbers in my mind", style: 'V' },{ text: "Repeat it out loud to myself", style: 'A' },{ text: "Write it down or type it out", style: 'K' }] },
+    { q: "When learning a new skill, I prefer:", options: [{ text: "Watching a demonstration or video", style: 'V' },{ text: "Listening to explanations or instructions", style: 'A' },{ text: "Trying it myself right away", style: 'K' }] },
+    { q: "In a classroom, I understand best when the teacher:", options: [{ text: "Uses diagrams, charts, or slides", style: 'V' },{ text: "Explains concepts verbally", style: 'A' },{ text: "Organizes group activities or hands-on tasks", style: 'K' }] },
+    { q: "When solving a problem, I:", options: [{ text: "Draw diagrams or flowcharts", style: 'V' },{ text: "Talk it through with someone", style: 'A' },{ text: "Act it out or use physical objects", style: 'K' }] },
+    { q: "I remember people by:", options: [{ text: "Their face (Appearance)", style: 'V' },{ text: "Their name or voice", style: 'A' },{ text: "Where we met or what we were doing", style: 'K' }] },
+    { q: "When I read instructions, I:", options: [{ text: "Look for pictures or illustrations", style: 'V' },{ text: "Prefer listening to someone explain them", style: 'A' },{ text: "Like to try the steps as I read", style: 'K' }] },
+    { q: "My notes are usually:", options: [{ text: "Filled with drawings, colours, or highlights", style: 'V' },{ text: "Mostly words I've heard", style: 'A' },{ text: "Step-by-step actions or check-lists", style: 'K' }] },
+    { q: "When watching a movie, I focus most on:", options: [{ text: "The visuals, colours, and scenery", style: 'V' },{ text: "The soundtrack and dialogue", style: 'A' },{ text: "The action and movement of the character", style: 'K' }] },
+    { q: "I remember better when I:", options: [{ text: "See information on a screen or paper", style: 'V' },{ text: "Hear it said out loud", style: 'A' },{ text: "Do it physically", style: 'K' }] },
+    { q: "When preparing for a Exam/Test, I:", options: [{ text: "Create mind maps or use flashcards", style: 'V' },{ text: "Read notes aloud or listen to recordings", style: 'A' },{ text: "Practice problems or use real examples", style: 'K' }] },
+    { q: "If I'm learning a dance or sport, I prefer:", options: [{ text: "Watching someone perform it", style: 'V' },{ text: "Listening to verbal instructions", style: 'A' },{ text: "Practicing the movements myself", style: 'K' }] },
+    { q: "In group work, I usually:", options: [{ text: "Take charge of creating visual aids", style: 'V' },{ text: "Lead discussions or explain ideas", style: 'A' },{ text: "Organize activities or experiments", style: 'K' }] },
+    { q: "When reading a story, I imagine:", options: [{ text: "Detailed images of scenes and characters", style: 'V' },{ text: "How characters sound and speak", style: 'A' },{ text: "The actions and movements happening", style: 'K' }] },
+    { q: "If I'm lost in a city, I prefer:", options: [{ text: "Using a map or GPS", style: 'V' },{ text: "Asking someone for directions", style: 'A' },{ text: "Walking around and exploring physically", style: 'K' }] },
+    { q: "In my free time, I usually:", options: [{ text: "Draw, design, or watch videos", style: 'V' },{ text: "Listen to podcasts or music", style: 'A' },{ text: "Play sports, cook, or do DIY projects", style: 'K' }] }
+];
+
+/* MANUAL TRANSLATIONS - complete for questions 1-15 */
+const TRANSLATED_QUESTIONS = {
+  en: VAKR_QUESTIONS_EN,
+  hi: [
+    { q: "फोन नंबर याद करने की कोशिश करते समय, मैं आमतौर पर:", options: [{ text: "संख्याओं की कल्पना करता/करती हूँ", style: 'V' },{ text: "उन्हें ज़ोर से दोहराता/दोहराती हूँ", style: 'A' },{ text: "इसे लिख लेता/लेती हूँ या टाइप कर लेता/लेती हूँ", style: 'K' }] },
+    { q: "नया कौशल सीखते समय, मैं पसंद करता/करती हूँ:", options: [{ text: "प्रदर्शन या वीडियो देखना", style: 'V' },{ text: "व्याख्याओं या निर्देशों को सुनना", style: 'A' },{ text: "तुरंत खुद कोशिश करना", style: 'K' }] },
+    { q: "कक्षा में, मुझे सबसे अच्छा तब समझ आता है जब शिक्षक:", options: [{ text: "डायग्राम, चार्ट या स्लाइड का उपयोग करता है", style: 'V' },{ text: "विचारों की मौखिक व्याख्या करता है", style: 'A' },{ text: "समूह गतिविधियाँ या हाथ से करने वाले कार्य आयोजित करता है", style: 'K' }] },
+    { q: "समस्या हल करते समय, मैं:", options: [{ text: "डायग्राम या फ़्लोचार्ट बनाता/बनाती हूँ", style: 'V' },{ text: "किसी के साथ बात करके इसे समझता/समझती हूँ", style: 'A' },{ text: "इसे अभिनय करता/करती हूँ या भौतिक वस्तुओं का उपयोग करता/करती हूँ", style: 'K' }] },
+    { q: "मैं लोगों को इस तरह याद रखता/रखती हूँ:", options: [{ text: "उनका चेहरा (दिखावट)", style: 'V' },{ text: "उनका नाम या आवाज़", style: 'A' },{ text: "हम कहां मिले थे या हम क्या कर रहे थे", style: 'K' }] },
+    { q: "जब मैं निर्देश पढ़ता/पढ़ती हूँ, मैं:", options: [{ text: "चित्र या चित्रण ढूँढ़ता/ढूँढ़ती हूँ", style: 'V' },{ text: "किसी को उन्हें समझाते सुनना पसंद करता/करती हूँ", style: 'A' },{ text: "पढ़ते समय ही चरण आज़माना पसंद करता/करती हूँ", style: 'K' }] },
+    { q: "मेरे नोट्स आमतौर पर:", options: [{ text: "ड्रॉइंग, रंग, या हाइलाइट से भरे होते हैं", style: 'V' },{ text: "ज़्यादातर सुनी हुई बातों के शब्द होते हैं", style: 'A' },{ text: "कदम-दर-कदम क्रियाएँ या चेक-लिस्ट होते हैं", style: 'K' }] },
+    { q: "फिल्म देखते समय, मैं सबसे अधिक ध्यान केंद्रित करता/करती हूँ:", options: [{ text: "दृश्यों, रंगों और दृश्य पर", style: 'V' },{ text: "साउंडट्रैक और संवाद पर", style: 'A' },{ text: "किरदार की कार्रवाई और गति पर", style: 'K' }] },
+    { q: "मुझे बेहतर याद रहता है जब मैं:", options: [{ text: "स्क्रीन या कागज पर जानकारी देखता/देखती हूँ", style: 'V' },{ text: "उसे ज़ोर से सुना जाता हूँ", style: 'A' },{ text: "उसे शारीरिक रूप से करता/करती हूँ", style: 'K' }] },
+    { q: "परीक्षा की तैयारी करते समय, मैं:", options: [{ text: "माइंड मैप बनाता/बनाती हूँ या फ्लैशकार्ड का उपयोग करता/करती हूँ", style: 'V' },{ text: "नोट्स ज़ोर से पढ़ता/पढ़ती हूँ या रिकॉर्डिंग सुनता/सुनती हूँ", style: 'A' },{ text: "प्रश्न अभ्यास करता/करती हूँ या वास्तविक उदाहरणों का उपयोग करती/करता हूँ", style: 'K' }] },
+    { q: "यदि मैं कोई नृत्य या खेल सीख रहा/रही हूँ, तो मैं पसंद करता/करती हूँ:", options: [{ text: "इसे करने वाले को देखना", style: 'V' },{ text: "मौखिक निर्देश सुनना", style: 'A' },{ text: "खुद अभ्यास करना", style: 'K' }] },
+    { q: "समूह कार्य में, मैं आमतौर पर:", options: [{ text: "दृश्य सहायक बनाने की ज़िम्मेदारी लेता/लेती हूँ", style: 'V' },{ text: "वार्तालाप का नेतृत्व या विचार समझाता/समझाती हूँ", style: 'A' },{ text: "गतिविधियाँ या प्रयोग आयोजित करता/करती हूँ", style: 'K' }] },
+    { q: "कहानी पढ़ते समय, मैं कल्पना करता/करती हूँ:", options: [{ text: "दृश्यों और पात्रों की विस्तृत तस्वीरें", style: 'V' },{ text: "पात्रों की आवाज़ और बोलने का तरीका", style: 'A' },{ text: "हो रही क्रियाएँ और गतिविधियाँ", style: 'K' }] },
+    { q: "यदि मैं किसी शहर में खो जाऊँ, तो मैं पसंद करता/करती हूँ:", options: [{ text: "मैप या GPS का उपयोग करना", style: 'V' },{ text: "किसी से दिशा पूछना", style: 'A' },{ text: "चलकर चारों ओर घूमना और खुद पता लगाना", style: 'K' }] },
+    { q: "फुर्सत के समय, मैं आमतौर पर:", options: [{ text: "ड्रॉ करना, डिजाइन करना, या वीडियो देखना", style: 'V' },{ text: "पॉडकास्ट या संगीत सुनना", style: 'A' },{ text: "खेलना, खाना बनाना, या DIY प्रोजेक्ट करना", style: 'K' }] }
+  ],
+  mr: [
+    { q: "फोन नंबर लक्षात ठेवण्याचा प्रयत्न करताना, मी सहसा:", options: [{ text: "नंबर माझ्या मनात चित्रित करतो/करते", style: 'V' },{ text: "तो स्वतः जोरात पुन्हा म्हणतो/म्हणते", style: 'A' },{ text: "तो लिहून ठेवतो/ठेवते किंवा टाइप करतो/करते", style: 'K' }] },
+    { q: "नवीन कौशल्य शिकताना, मला आवडते:", options: [{ text: "प्रदर्शन किंवा व्हिडिओ बघणे", style: 'V' },{ text: "स्पष्टीकरणे ऐकणे", style: 'A' },{ text: "ते लगेच स्वतः करून पाहणे", style: 'K' }] },
+    { q: "वर्गात, मला सर्वात चांगले समजते जेव्हा शिक्षक:", options: [{ text: "रेषाचित्रे, चार्ट किंवा स्लाईड वापरतात", style: 'V' },{ text: "तत्त्वे मौखिकरित्या समजावून सांगतात", style: 'A' },{ text: "गट क्रियाकलाप किंवा प्रायोगिक काम आयोजित करतात", style: 'K' }] },
+    { q: "समस्या सोडवताना, मी:", options: [{ text: "डायग्राम किंवा फ्लोचार्ट काढतो/काढते", style: 'V' },{ text: "कोणाशी बोलून चर्चा करतो/करते", style: 'A' },{ text: "ते अभिनय करतो/करते किंवा भौतिक वस्तू वापरतो/वापरते", style: 'K' }] },
+    { q: "मी लोकांना कसे स्मरण ठेवतो/ठेवते:", options: [{ text: "त्यांचे चेहरे (दिखावा)", style: 'V' },{ text: "त्यांचे नाव किंवा आवाज", style: 'A' },{ text: "आपण कोठे भेटलो किंवा आपण काय करत होतो", style: 'K' }] },
+    { q: "सूचना वाचताना, मी:", options: [{ text: "चित्रे किंवा उदाहरणे शोधतो/शोधते", style: 'V' },{ text: "कोणीतरी समजावताना ऐकणे पसंत करतो/करते", style: 'A' },{ text: "वाचताना ते चरण करून पाहायला आवडते", style: 'K' }] },
+    { q: "माझी नोंदी सहसा:", options: [{ text: "ड्रॉइंग, रंग किंवा हायलाइटनी भरलेली असतात", style: 'V' },{ text: "जास्त करून ऐकलेल्या शब्दांनी भरलेली असतात", style: 'A' },{ text: "कदम-दर-कदम क्रिया किंवा चेकलिस्ट असतात", style: 'K' }] },
+    { q: "चित्रपट पाहताना, मी सर्वात जास्त लक्ष देतो/देते:", options: [{ text: "दृश्यों, रंग आणि दृश्यांवर", style: 'V' },{ text: "साउंडट्रॅक आणि संवादावर", style: 'A' },{ text: "चरित्राच्या क्रिया आणि हालचालींवर", style: 'K' }] },
+    { q: "मला चांगले लक्षात राहते जेव्हा मी:", options: [{ text: "स्क्रीन किंवा कागदावर माहिती पाहतो/पाहते", style: 'V' },{ text: "ते जोरात ऐकतो/ऐकते", style: 'A' },{ text: "तसा काही करून पाहतो/पाहते", style: 'K' }] },
+    { q: "परीक्षा तयार करताना, मी:", options: [{ text: "माइंड मॅप बनवतो/बनवते किंवा फ्लॅशकार्ड वापरतो/वापरते", style: 'V' },{ text: "नोंदी जोरात वाचतो/वाचते किंवा रेकॉर्डिंग ऐकतो/ऐकते", style: 'A' },{ text: "प्रश्नांची प्रॅक्टिस करतो/करते किंवा प्रत्यक्ष उदाहरण वापरतो/वापरते", style: 'K' }] },
+    { q: "जर मी नृत्य किंवा क्रीडा शिकत असलो तर मला आवडते:", options: [{ text: "कोणीतरी ते करताना पाहणे", style: 'V' },{ text: "मौखिक सूचना ऐकणे", style: 'A' },{ text: "चालणार्या हालचाली स्वतः करून बघणे", style: 'K' }] },
+    { q: "गट कामात, मी सहसा:", options: [{ text: "दृश्यमाध्यम तयार करण्याची जबाबदारी घेतो/घेते", style: 'V' },{ text: "चर्चेत नेतृत्व करतो/करते किंवा कल्पना समजावतो/समजावते", style: 'A' },{ text: "क्रिया किंवा प्रयोग आयोजित करतो/करते", style: 'K' }] },
+    { q: "कथा वाचताना, मी कल्पना करतो/करते:", options: [{ text: "दृश्यमान दृश्ये आणि पात्रांची तपशीलवार प्रतिमा", style: 'V' },{ text: "पात्रांची आवाज आणि बोलण्याची पद्धत", style: 'A' },{ text: "घटणांच्या क्रिया आणि हालचाली", style: 'K' }] },
+    { q: "जर मी शहरात हरवलो/हरवली तर मला आवडेल:", options: [{ text: "नकाशा किंवा GPS वापरणे", style: 'V' },{ text: "कुणाला मार्ग विचारणे", style: 'A' },{ text: "पायाने फिरून स्वतः शोधणे", style: 'K' }] },
+    { q: "मोकळ्या वेळी, मी सहसा:", options: [{ text: "रेखाटण, डिझाइन किंवा व्हिडिओ बघणे", style: 'V' },{ text: "पॉडकास्ट किंवा संगीत ऐकणे", style: 'A' },{ text: "खेळणे, स्वयंपाक करणे किंवा DIY प्रोजेक्ट करणे", style: 'K' }] }
+  ],
+  bn: [
+    { q: "একটি ফোন নম্বর মনে রাখার চেষ্টা করলে, আমি সাধারণত:", options: [{ text: "সংখ্যাগুলো মনের ভিতরে কল্পনা করি", style: 'V' },{ text: "নিজেকে তা জোরে করে পুনরাবৃত্তি করি", style: 'A' },{ text: "এটি লিখে রাখি বা টাইপ করে রাখি", style: 'K' }] },
+    { q: "নতুন কোনো দক্ষতা শিখলে, আমি পছন্দ করি:", options: [{ text: "একটি প্রদর্শনী বা ভিডিও দেখা", style: 'V' },{ text: "বর্ণনা বা নির্দেশ শুনা", style: 'A' },{ text: "তৎক্ষণাৎ নিজে চেষ্টা করা", style: 'K' }] },
+    { q: "ক্লাস রুমে, আমি সবচেয়ে ভালো বুঝি যখন শিক্ষক:", options: [{ text: "ডায়াগ্রাম, চার্ট বা স্লাইড ব্যবহার করেন", style: 'V' },{ text: "মৌখিকভাবে ধারণা ব্যাখ্যা করেন", style: 'A' },{ text: "গ্রুপ কার্যক্রম বা হাতে-কলমে কাজ আয়োজন করেন", style: 'K' }] },
+    { q: "সমস্যা সমাধান করলে, আমি:", options: [{ text: "ডায়াগ্রাম বা ফ্লোচার্ট আঁকি", style: 'V' },{ text: "কাওকে নিয়ে আলোচনা করি", style: 'A' },{ text: "এটি অভিনয় করি বা ভৌত বস্তু ব্যবহার করি", style: 'K' }] },
+    { q: "আমি মানুষদের স্মরণ রাখি:", options: [{ text: "তাদের মুখ (দেখায়)", style: 'V' },{ text: "তদের নাম বা কণ্ঠস্বর", style: 'A' },{ text: "কোথায় দেখা হয়েছিল বা আমরা কি করছিলাম", style: 'K' }] },
+    { q: "নির্দেশনা পড়লে, আমি:", options: [{ text: "ছবি বা চিত্র খুঁজি", style: 'V' },{ text: "কারো ব্যাখ্যা শুনতে পছন্দ করি", style: 'A' },{ text: "পড়ার সময় ধাপগুলো চেষ্টা করতে চাই", style: 'K' }] },
+    { q: "আমার নোট সাধারণত:", options: [{ text: "চিত্র, রং বা হাইলাইটে ভরা থাকে", style: 'V' },{ text: "অধিকাংশই আমি যে শব্দগুলো শুনেছি সেগুলো লেখা থাকে", style: 'A' },{ text: "ধাপে ধাপে কার্যকলাপ বা চেকলিস্ট থাকে", style: 'K' }] },
+    { q: "চলচ্চিত্র দেখলে, আমি প্রধানত কি দেখি:", options: [{ text: "দৃশ্য, রং এবং পটভূমি", style: 'V' },{ text: "সাউন্ডট্র্যাক এবং সংলাপ", style: 'A' },{ text: "চরিত্রের কর্ম এবং গতিবিধি", style: 'K' }] },
+    { q: "আমি ভালোভাবে মনে রাখি যখন আমি:", options: [{ text: "স্ক্রিন বা কাগজে তথ্য দেখলে", style: 'V' },{ text: "তাকে জোরে শুনলে", style: 'A' },{ text: "শারীরিকভাবে তা করলে", style: 'K' }] },
+    { q: "পড়াশোনার জন্য পরীক্ষা প্রস্তুতি করলে, আমি:", options: [{ text: "মাইন্ড ম্যাপ তৈরি করি বা ফ্ল্যাশকার্ড ব্যবহার করি", style: 'V' },{ text: "নোট জোরে পড়ি বা রেকর্ডিং শুনি", style: 'A' },{ text: "প্রশ্ন অনুশীলন করি বা বাস্তব উদাহরণ ব্যবহার করি", style: 'K' }] },
+    { q: "নাচ বা খেলা শেখার সময়, আমি পছন্দ করি:", options: [{ text: "কারো তা করতে দেখना", style: 'V' },{ text: "মৌখিক নির্দেশ শুনা", style: 'A' },{ text: "নিজে অনুশীলন করা", style: 'K' }] },
+    { q: "গোষ্ঠী কাজের সময়, আমি সাধারণত:", options: [{ text: "চিত্রগত সাহায্য তৈরি করার দায়িত্ব নিই", style: 'V' },{ text: "আলোচনা বা ধারণা ব্যাখ্যা করি", style: 'A' },{ text: "কিছু কার্যক্রম বা পরীক্ষা সংগঠিত করি", style: 'K' }] },
+    { q: "একটি গল্প পড়লে, আমি কল্পনা করি:", options: [{ text: "দৃশ্য ও চরিত্রের বিস্তারিত চিত্র", style: 'V' },{ text: "কিভাবে চরিত্রেরা কথা বলে বা শব্দ করে", style: 'A' },{ text: "কী ভাবে কাজ ও ক্রিয়া ঘটছে", style: 'K' }] },
+    { q: "যদি আমি শহরে হারিয়ে যাই, আমি পছন্দ করব:", options: [{ text: "ম্যাপে বা GPS এ দেখা", style: 'V' },{ text: "কাউকে দিক নির্দেশ জিজ্ঞাসা করা", style: 'A' },{ text: "প歩ে ঘুরে নিজে পথ খোঁজা", style: 'K' }] },
+    { q: "বিনোদনের সময়, আমি সাধারণত:", options: [{ text: "দেখা, ডিজাইন করা বা ভিডিও দেখা", style: 'V' },{ text: "পডকাস্ট বা সঙ্গীত শোনা", style: 'A' },{ text: "খেলা করা, রান্না করা বা DIY করা", style: 'K' }] }
+  ],
+  ta: [
+    { q: "தொலைபேசி எண்ணை நினைவில் வைத்துக்கொள்ள முயற்சிக்கும்போது, நான் பொதுவாக:", options: [{ text: "எண்களை என் மனதில் காட்சி போன்று கொள்ளுகிறேன்", style: 'V' },{ text: "அதை சத்தமாகப் பதியுகிறேன்/மீண்டும் சொல்கிறேன்", style: 'A' },{ text: "அதை எழுதி வைக்கிறேன் அல்லது தட்டச்சு செய்கிறேன்", style: 'K' }] },
+    { q: "ஒரு புதிய திறனை கற்பது போதே, நான் விரும்புவது:", options: [{ text: "டெமோ அல்லது வீடியோ பார்ப்பது", style: 'V' },{ text: "விளக்கங்கள் அல்லது வழிமுறைகள் கேட்க வேண்டும்", style: 'A' },{ text: "உடனே அதை முயற்சி செய்தல்", style: 'K' }] },
+    { q: "வகுப்பறையில், ஆசிரியர் இதைச் செய்கிறார் என்றால் நான் சிறந்த முறையில் புரிந்து கொள்கிறேன்:", options: [{ text: "வரைபடங்கள், விளக்கங்கள் அல்லது ஸ்லைட்களைப் பயன்படுத்துகிறார்", style: 'V' },{ text: "வாய்மையாக கருத்துகளை விளக்குகிறார்", style: 'A' },{ text: "குழு செயல்பாடுகள் அல்லது கைப்பணிகளை ஏற்பாடு செய்கிறார்", style: 'K' }] },
+    { q: "ஒரு பிரச்சினையைத் தீர்க்கும் போது, நான்:", options: [{ text: "வரைபடங்கள் அல்லது ஃப்ளோச்சார்ட்களை வரைந்து கொள்கிறேன்", style: 'V' },{ text: "யாரோ ஒருவருடன் பேசிக் கொண்டு அது பற்றி சிந்திக்கிறேன்", style: 'A' },{ text: "அதனை நடித்து காட்டுகிறேன் அல்லது உடல் பொருட்களை பயன்படுத்துகிறேன்", style: 'K' }] },
+    { q: "நேரத்தைப் பற்றி நான் மக்களை நினைவில் வைத்துக் கொள்கிறேன்:", options: [{ text: "அவர்களின் முகத்தை (வெற்று தோற்றம்)", style: 'V' },{ text: "அவர்களின் பெயர் அல்லது குரல்", style: 'A' },{ text: "நாங்கள் எங்கு சந்தித்தோம் அல்லது நாம் என்ன செய்தோம்", style: 'K' }] },
+    { q: "வழிமுறைகளை நான் வாசிக்கும் போது, நான்:", options: [{ text: "படங்கள் அல்லது விளக்கங்களை எதிர்பார்க்கிறேன்", style: 'V' },{ text: "யாரோ ஒருவர் அதை விளக்கும்போது கேட்க விரும்புகிறேன்", style: 'A' },{ text: "வாசிக்கும்போது படிகள் முயந்து பார்க்க விரும்புகிறேன்", style: 'K' }] },
+    { q: "என் குறிப்பு பொதுவாக:", options: [{ text: "வரைபடங்கள், நிறங்கள் அல்லது முக்கியப்படுத்தல்கள் நிறைந்தவை", style: 'V' },{ text: "நான் கேட்ட சொற்களின் பெரும்பான்மையே", style: 'A' },{ text: "அடுக்குமுறை செயல்கள் அல்லது செக்-லிஸ்டுகள்", style: 'K' }] },
+    { q: "சினிமாவைக் கண்டு கொண்டபோது, நான் அதிகமாக கவனம் செலுத்துகிறேன்:", options: [{ text: "காட்சிகள், நிறங்கள் மற்றும் காட்சியமைப்பு", style: 'V' },{ text: "இசை மற்றும் உரையாடல்கள்", style: 'A' },{ text: "பாத்திரத்தின் செயல்கள் மற்றும் இயக்கங்கள்", style: 'K' }] },
+    { q: "நான் சிறந்த முறையில் நினைவில் வைத்திருக்கிறேன் כאשר я:", options: [{ text: "திரையில் அல்லது காகிதத்தில் தகவலைக் காண்கிறேன்", style: 'V' },{ text: "அதை சத்தமாகக் கேட்டால்", style: 'A' },{ text: "அதை உடல்பூர்வமாகச் செய்கிறேன்", style: 'K' }] },
+    { q: "பரீட்சைக்கு தயாராகும் போது, நான்:", options: [{ text: "மன நாட் வரைபடங்கள் உருவாக்குகிறேன் அல்லது ஃபிளாஷ் கார்டுகள் பயன்படுத்துகிறேன்", style: 'V' },{ text: "குறிப்புகளை சத்தமாக வாசிக்கிறேன் அல்லது பதிவு கேட்கிறேன்", style: 'A' },{ text: "பிரச்சினைகள் பயிற்சி செய்கிறேன் அல்லது உண்மையான உதாரணங்கள் பயன்படுத்துகிறேன்", style: 'K' }] },
+    { q: "நான் நடனம் அல்லது விளையாட்டு கற்றுக் கொண்டால், நான் விரும்புவது:", options: [{ text: "அதை யாரோ செய்யும்போது பார்ப்பது", style: 'V' },{ text: "வாய்மையாகக் கூறப்படும் அறிவுரைகளை கேட்க", style: 'A' },{ text: "உடலில் நடைமுறை மேற்கொண்டு பயிற்சி செய்வது", style: 'K' }] },
+    { q: "குழு பணியில், நான் பொதுவாக:", options: [{ text: "காட்சி உதவிகளை உருவாக்குதல் என்பது என் பொறுப்பு", style: 'V' },{ text: "பேச்சை இதரவர்களை வழிநடத்தும் அல்லது யோசனைகளை விளக்கும்", style: 'A' },{ text: "செயல்பாடுகள் அல்லது பரிசோதனைகளை ஒருங்கிணைக்கிறேன்", style: 'K' }] },
+    { q: "ஒரு கதை படிக்கும் போது, நான் கற்பனை செய்கிறேன்:", options: [{ text: "காட்சிகளின் மற்றும் கதாபாத்திரங்களின் விரிவான படங்கள்", style: 'V' },{ text: "கதைபாத்திரர்கள் எப்படி பேசுகிறார்கள் மற்றும் ஒலிக்கிறார்கள்", style: 'A' },{ text: "நடந்திருக்கும் செயல்கள் மற்றும் இயக்கங்கள்", style: 'K' }] },
+    { q: "நகரத்தில் வழிமறைப்பட்டால், நான் விரும்புவது:", options: [{ text: "மேப் அல்லது GPS பயன்படுத்துகிறேன்", style: 'V' },{ text: "யாரையாவது கேட்டு வழிகாட்டி பெறுவேன்", style: 'A' },{ text: "இடப்பயணம் செய்து வேடிக்கை பார்ப்பேன்", style: 'K' }] },
+    { q: "விடுமுறையில், நான் பொதுவாக:", options: [{ text: "வரைதல், வடிவமைத்தல் அல்லது வீடியோ பார்க்கிறேன்", style: 'V' },{ text: "பாட்காஸ்ட் அல்லது இசை கேட்கிறேன்", style: 'A' },{ text: "விளையாடு, சமையல் அல்லது DIY திட்டங்கள் செய்கிறேன்", style: 'K' }] 
+}],
+  gu: [
+    { q: "ફોન નંબર યાદ કરવાનો પ્રયાસ કરતા, હું સામાન્ય રીતે:", options: [{ text: "નંબર મનમાં કલ્પના કરું છું", style: 'V' },{ text: "તેને જોરથી પુનરાવર્તન કરું છું", style: 'A' },{ text: "તેને લખી લઉં અથવા ટાઇપ કરું", style: 'K' }] },
+    { q: "નવું કૌશલ્ય શીખતા હું પસંદ કરું છું:", options: [{ text: "ડેમો અથવા વિડિયો જોવું", style: 'V' },{ text: "વિવરણો અથવા સૂચનો સાંભળવા", style: 'A' },{ text: "તુરંત જ જાતે પ્રયત્ન કરવો", style: 'K' }] },
+    { q: "ક્લાસરૂમમાં, હું શ્રેષ્ઠ રીતે સમજું છું જ્યારે શિક્ષક:", options: [{ text: "ડાયગ્રામ, ચાર્ટ અથવા સ્લાઇડ્સ નો ઉપયોગ કરે છે", style: 'V' },{ text: "મૌખિક રીતે વિચારોને સમજાવે છે", style: 'A' },{ text: "સમૂહ પ્રવૃત્તિઓ અથવા હૅન્ડ્સ-ઓન કાર્યનું આયોજન કરે છે", style: 'K' }] },
+    { q: "સમસ્યા ઉકેલતા, હું:", options: [{ text: "ડાયગ્રામ અથવા ફ્લો ચાર્ટ બનાવું છું", style: 'V' },{ text: "કોઈ સાથે ચર્ચા કરીને તેને સમજી લઉં છું", style: 'A' },{ text: "તેને અભિનય કરું છું અથવા ભૌતિક વસ્તુઓનો ઉપયોગ કરું છું", style: 'K' }] },
+    { q: "હું લોકોને યાદ રાખું છું:", options: [{ text: "તેમનો ચહેરો (દેખાવ)", style: 'V' },{ text: "તેમનું નામ અથવા અવાજ", style: 'A' },{ text: "અમે કયા મળ્યા હતા અથવા શું કરી રહ્યા હતા", style: 'K' }] },
+    { q: "હું સૂચનાઓ વાંચું ત્યારે, હું:", options: [{ text: "ચિત્રો અથવા ચિત્રણોની શોધ કરું છું", style: 'V' },{ text: "કોઈ તેમને સમજાવતા સાંભળવું પસંદ કરું છું", style: 'A' },{ text: "વાંચતા સમયે પગલાં અજમાવવામાં પસંદ કરું છું", style: 'K' }] },
+    { q: "મારા નોટ્સ સામાન્ય રીતે:", options: [{ text: "ડ્રોઇંગ, રંગો અથવા હાઇલાઇટથી ભરેલા હોય છે", style: 'V' },{ text: "મોટાભાગે સાંભળીેલી વાતોના શબ્દોથી ભરેલા હોય છે", style: 'A' },{ text: "સ્ટેપ-બાય-સ્ટેપ ક્રિયાઓ અથવા ચેકલિસ્ટ હોય છે", style: 'K' }] },
+    { q: "ફિલ્મ જોતા, હું વધુ ધ્યાન કેન્દ્રિત કરું છું:", options: [{ text: "વિઝ્યુઅલ્સ, રંગો અને દૃશ્ય પર", style: 'V' },{ text: "સાઉન્ડટ્રૅક અને સંવાદ પર", style: 'A' },{ text: "પાત્રની ક્રિયા અને ગતિ પર", style: 'K' }] },
+    { q: "હું વધુ સારી રીતે યાદ રાખું છું જ્યારે હું:", options: [{ text: "સ્ક્રીન અથવા કાગળ પર માહિતી જોઈને", style: 'V' },{ text: "તેને ઉંચે સાંભળી", style: 'A' },{ text: "તેને શારીરિક રીતે કરી", style: 'K' }] },
+    { q: "પરીક્ષા માટે તૈયાર થતા, હું:", options: [{ text: "માઇન્ડ મેપ બનાવું/ફ્લૅશકાર્ડ વાપરું", style: 'V' },{ text: "નોટ્સ ઉંચા અવાજે વાંચું અથવા રેકોર્ડિંગ સાંભળું", style: 'A' },{ text: "પ્રશ્નોનો અભ્યાસ કરું અથવા ખરેખર ઉદાહરણો વાપરું", style: 'K' }] },
+    { q: "જો હું નૃત્ય અથવા રમત શીખું છું, તો હું પસંદ કરું છું:", options: [{ text: "કોઈ તેને કરે ત્યારે જોવું", style: 'V' },{ text: "મૌખિક સૂચનાઓ સાંભળવી", style: 'A' },{ text: "હાથ ચલાવવાની અનુભવીમાં പരിശീലન કરવું", style: 'K' }] },
+    { q: "ગૃપ કાર્યોમાં, હું સામાન્ય રીતે:", options: [{ text: "વિઝ્યુઅલ સહાય બનાવવાની જવાબદારી લઈ લઉં", style: 'V' },{ text: "ચર્ચાનું નેતૃત્વ કરું અથવા વિચારો સમજાવું", style: 'A' },{ text: "ક્રિયાઓ અથવા પ્રયોગો ગોઠવુ", style: 'K' }] },
+    { q: "કિસ્સા વાંચીશ ત્યારે, હું કલ્પના કરું છું:", options: [{ text: "દ્રશ્યો અને પાત્રોની વિગતવાર છબીઓ", style: 'V' },{ text: "પાત્રો કેવી રીતે બોલે છે અને અવાજ કરે છે", style: 'A' },{ text: "ઘટનાઓની ક્રિયાઓ અને ગતિ", style: 'K' }] },
+    { q: "હું શહેરમાં ભટકી જઈતી હોય તો, હું પસંદ કરું છું:", options: [{ text: "નકશો કે GPS ઉપયોગ કરવું", style: 'V' },{ text: "કોણાને રસ્તો પૂછવું", style: 'A' },{ text: "પોતે પગપાળા ફરતા ભેગુ શોધવું", style: 'K' }] },
+    { q: "મન મૂકવામાં, હું સામાન્ય રીતે:", options: [{ text: "ડ્રોઇંગ, ડિઝાઈન અથવા વિડિઓ જોવું", style: 'V' },{ text: "પોડકાસ્ટ કે સંગીત સાંભળવું", style: 'A' },{ text: "ક્રીડા અને રસોઈ અથવા DIY પ્રોજેક્ટ કરવુ", style: 'K' }] 
+}],
+  es: [
+    { q: "Al intentar recordar un número de teléfono, normalmente yo:", options: [{ text: "Visualizo los números en mi mente", style: 'V' },{ text: "Los repito en voz alta para mí", style: 'A' },{ text: "Los escribo o los tecleo", style: 'K' }] },
+    { q: "Al aprender una nueva habilidad, prefiero:", options: [{ text: "Ver una demostración o video", style: 'V' },{ text: "Escuchar explicaciones o instrucciones", style: 'A' },{ text: "Intentarlo yo mismo de inmediato", style: 'K' }] },
+    { q: "En el aula, entiendo mejor cuando el profesor:", options: [{ text: "Usa diagramas, gráficos o diapositivas", style: 'V' },{ text: "Explica los conceptos verbalmente", style: 'A' },{ text: "Organiza actividades grupales o tareas prácticas", style: 'K' }] },
+    { q: "Al resolver un problema, yo:", options: [{ text: "Dibujo diagramas o flujogramas", style: 'V' },{ text: "Lo discuto con alguien", style: 'A' },{ text: "Lo actúo o uso objetos físicos", style: 'K' }] },
+    { q: "Recuerdo a las personas por:", options: [{ text: "Su rostro (apariencia)", style: 'V' },{ text: "Su nombre o voz", style: 'A' },{ text: "Dónde nos conocimos o lo que hacíamos", style: 'K' }] },
+    { q: "Cuando leo instrucciones, yo:", options: [{ text: "Busco imágenes o ilustraciones", style: 'V' },{ text: "Prefiero escuchar a alguien explicarlas", style: 'A' },{ text: "Me gusta intentar los pasos mientras leo", style: 'K' }] },
+    { q: "Mis apuntes suelen ser:", options: [{ text: "Llenos de dibujos, colores o destacadores", style: 'V' },{ text: "Principalmente palabras que he escuchado", style: 'A' },{ text: "Acciones paso a paso o listas de verificación", style: 'K' }] },
+    { q: "Al ver una película, me fijo más en:", options: [{ text: "Los visuales, colores y escenarios", style: 'V' },{ text: "La banda sonora y el diálogo", style: 'A' },{ text: "La acción y movimiento del personaje", style: 'K' }] },
+    { q: "Recuerdo mejor cuando:", options: [{ text: "Veo la información en una pantalla o papel", style: 'V' },{ text: "La escucho en voz alta", style: 'A' },{ text: "La hago físicamente", style: 'K' }] },
+    { q: "Al prepararme para una examen/prueba, yo:", options: [{ text: "Creo mapas mentales o uso tarjetas de memoria", style: 'V' },{ text: "Leo notas en voz alta o escucho grabaciones", style: 'A' },{ text: "Practico problemas o uso ejemplos reales", style: 'K' }] },
+    { q: "Si estoy aprendiendo un baile o deporte, prefiero:", options: [{ text: "Ver a alguien realizarlo", style: 'V' },{ text: "Escuchar instrucciones verbales", style: 'A' },{ text: "Practicar los movimientos yo mismo", style: 'K' }] },
+    { q: "En el trabajo en grupo, yo normalmente:", options: [{ text: "Me encargo de crear ayudas visuales", style: 'V' },{ text: "Lidero discusiones o explico ideas", style: 'A' },{ text: "Organizo actividades o experimentos", style: 'K' }] },
+    { q: "Al leer una historia, imagino:", options: [{ text: "Imágenes detalladas de escenas y personajes", style: 'V' },{ text: "Cómo suenan y hablan los personajes", style: 'A' },{ text: "Las acciones y movimientos que ocurren", style: 'K' }] },
+    { q: "Si me pierdo en una ciudad, prefiero:", options: [{ text: "Usar un mapa o GPS", style: 'V' },{ text: "Preguntar a alguien por direcciones", style: 'A' },{ text: "Caminar y explorar físicamente", style: 'K' }] },
+    { q: "En mi tiempo libre, normalmente:", options: [{ text: "Dibujo, diseño o veo videos", style: 'V' },{ text: "Escucho podcasts o música", style: 'A' },{ text: "Practico deportes, cocino o hago proyectos DIY", style: 'K' }] }
+  ],
+  fr: [
+    { q: "Lorsque j'essaie de retenir un numéro de téléphone, je:", options: [{ text: "Visualise les chiffres dans ma tête", style: 'V' },{ text: "Le répète à voix haute pour moi-même", style: 'A' },{ text: "L'écris ou le tape", style: 'K' }] },
+    { q: "Lorsque j'apprends une nouvelle compétence, je préfère:", options: [{ text: "Regarder une démonstration ou une vidéo", style: 'V' },{ text: "Écouter des explications ou des instructions", style: 'A' },{ text: "L'essayer moi-même immédiatement", style: 'K' }] },
+    { q: "En classe, je comprends mieux lorsque l'enseignant:", options: [{ text: "Utilise des diagrammes, des graphiques ou des diapositives", style: 'V' },{ text: "Explique les concepts verbalement", style: 'A' },{ text: "Organise des activités de groupe ou des tâches pratiques", style: 'K' }] },
+    { q: "En résolvant un problème, je:", options: [{ text: "Dessine des diagrammes ou des organigrammes", style: 'V' },{ text: "En discute avec quelqu'un", style: 'A' },{ text: "Le mime ou utilise des objets physiques", style: 'K' }] },
+    { q: "Je me rappelle les gens par:", options: [{ text: "Leur visage (apparence)", style: 'V' },{ text: "Leur nom ou voix", style: 'A' },{ text: "Où nous nous sommes rencontrés ou ce que nous faisions", style: 'K' }] },
+    { q: "Quand je lis des instructions, je:", options: [{ text: "Cherche des images ou des illustrations", style: 'V' },{ text: "Préfère écouter quelqu'un les expliquer", style: 'A' },{ text: "Aime essayer les étapes pendant que je lis", style: 'K' }] },
+    { q: "Mes notes sont généralement:", options: [{ text: "Remplies de dessins, de couleurs ou de surlignages", style: 'V' },{ text: "Principalement des mots que j'ai entendus", style: 'A' },{ text: "Des actions étape par étape ou des listes de contrôle", style: 'K' }] },
+    { q: "En regardant un film, je me concentre surtout sur:", options: [{ text: "Les visuels, les couleurs et les décors", style: 'V' },{ text: "La bande sonore et les dialogues", style: 'A' },{ text: "L'action et le mouvement du personnage", style: 'K' }] },
+    { q: "Je retiens mieux lorsque:", options: [{ text: "Je vois l'information sur un écran ou sur papier", style: 'V' },{ text: "Je l'entends dite à voix haute", style: 'A' },{ text: "Je la fais physiquement", style: 'K' }] },
+    { q: "En me préparant pour une examen/test, je:", options: [{ text: "Crée des cartes mentales ou utilise des fiches", style: 'V' },{ text: "Lis mes notes à voix haute ou écoute des enregistrements", style: 'A' },{ text: "Pratique des exercices ou utilise des exemples réels", style: 'K' }] },
+    { q: "Si j'apprends une danse ou un sport, je préfère:", options: [{ text: "Regarder quelqu'un l'exécuter", style: 'V' },{ text: "Écouter des instructions verbales", style: 'A' },{ text: "Pratiquer les mouvements moi-même", style: 'K' }] },
+    { q: "Dans le travail de groupe, je:", options: [{ text: "Prends en charge la création d'aides visuelles", style: 'V' },{ text: "Dirige les discussions ou explique des idées", style: 'A' },{ text: "Organise des activités ou des expériences", style: 'K' }] },
+    { q: "En lisant une histoire, j'imagine:", options: [{ text: "Des images détaillées des scènes et des personnages", style: 'V' },{ text: "Comment les personnages sonnent et parlent", style: 'A' },{ text: "Les actions et les mouvements qui se produisent", style: 'K' }] },
+    { q: "Si je suis perdu dans une ville, je préfère:", options: [{ text: "Utiliser une carte ou un GPS", style: 'V' },{ text: "Demander à quelqu'un des indications", style: 'A' },{ text: "Marcher et explorer physiquement", style: 'K' }] },
+    { q: "Pendant mon temps libre, je:", options: [{ text: "Dessine, conçois ou regarde des vidéos", style: 'V' },{ text: "Écoute des podcasts ou de la musique", style: 'A' },{ text: "Pratique des sports, cuisine ou fais des projets DIY", style: 'K' }] 
+}],
+  zh: [
+    { q: "尝试记住电话号码时，我通常：", options: [{ text: "在脑海中将数字可视化", style: 'V' },{ text: "大声重复给自己听", style: 'A' },{ text: "把它写下来或输入出来", style: 'K' }] },
+    { q: "学习一项新技能时，我更喜欢：", options: [{ text: "观看示范或视频", style: 'V' },{ text: "听解释或说明", style: 'A' },{ text: "马上自己尝试", style: 'K' }] },
+    { q: "在课堂上，当老师这样做时我最能理解：", options: [{ text: "使用图表、表格或幻灯片", style: 'V' },{ text: "口头解释概念", style: 'A' },{ text: "组织小组活动或实践任务", style: 'K' }] },
+    { q: "解决问题时，我会：", options: [{ text: "绘制图表或流程图", style: 'V' },{ text: "与他人讨论", style: 'A' },{ text: "表演或使用实物", style: 'K' }] },
+    { q: "我通过以下方式记住人：", options: [{ text: "他们的脸（外表）", style: 'V' },{ text: "他们的名字或声音", style: 'A' },{ text: "我们在哪里见面或我们在做什么", style: 'K' }] },
+    { q: "当我阅读说明时，我：", options: [{ text: "寻找图片或插图", style: 'V' },{ text: "更喜欢听别人解释", style: 'A' },{ text: "喜欢在阅读时尝试步骤", style: 'K' }] },
+    { q: "我的笔记通常是：", options: [{ text: "充满了图画、颜色或高亮", style: 'V' },{ text: "大多是我听到的单词", style: 'A' },{ text: "逐步的操作或检查清单", style: 'K' }] },
+    { q: "看电影时，我最关注：", options: [{ text: "视觉、颜色和场景", style: 'V' },{ text: "原声和对话", style: 'A' },{ text: "角色的动作和移动", style: 'K' }] },
+    { q: "当我记得更好时：", options: [{ text: "在屏幕或纸上看到信息", style: 'V' },{ text: "听到它被大声说出", style: 'A' },{ text: "亲自去做", style: 'K' }] },
+    { q: "准备 考试 时，我：", options: [{ text: "创建思维导图或使用抽认卡", style: 'V' },{ text: "大声朗读笔记或听录音", style: 'A' },{ text: "练习题目或使用真实示例", style: 'K' }] },
+    { q: "如果我在学习舞蹈或运动，我更喜欢：", options: [{ text: "观看别人表演", style: 'V' },{ text: "听口头指示", style: 'A' },{ text: "自己练习动作", style: 'K' }] },
+    { q: "在小组工作中，我通常：", options: [{ text: "负责制作视觉辅助材料", style: 'V' },{ text: "领导讨论或解释想法", style: 'A' },{ text: "组织活动或实验", style: 'K' }] },
+    { q: "读故事时，我会想象：", options: [{ text: "场景和角色的详细画面", style: 'V' },{ text: "角色的声音和说话方式", style: 'A' },{ text: "正在发生的动作和移动", style: 'K' }] },
+    { q: "如果我在城市迷路，我更愿意：", options: [{ text: "使用地图或 GPS", style: 'V' },{ text: "向某人问路", style: 'A' },{ text: "走着四处探索", style: 'K' }] },
+    { q: "在我的空闲时间，我通常：", options: [{ text: "绘画、设计或观看视频", style: 'V' },{ text: "听播客或音乐", style: 'A' },{ text: "进行运动、做饭或做 DIY 项目", style: 'K' }] 
+}],
+  ru: [
+    { q: "При попытке запомнить номер телефона я обычно:", options: [{ text: "Визуализирую цифры в уме", style: 'V' },{ text: "Повторяю их вслух для себя", style: 'A' },{ text: "Записываю или печатаю их", style: 'K' }] },
+    { q: "При изучении нового навыка я предпочитаю:", options: [{ text: "Смотреть демонстрацию или видео", style: 'V' },{ text: "Слушать объяснения или инструкции", style: 'A' },{ text: "Сразу пробовать самому", style: 'K' }] },
+    { q: "В классе я лучше всего понимаю, когда преподаватель:", options: [{ text: "Использует диаграммы, графики или слайды", style: 'V' },{ text: "Объясняет концепции устно", style: 'A' },{ text: "Организует групповые занятия или практические задания", style: 'K' }] },
+    { q: "При решении задачи я:", options: [{ text: "Рисую диаграммы или блок-схемы", style: 'V' },{ text: "Обсуждаю это с кем-то", style: 'A' },{ text: "Разыгрываю это или использую предметы", style: 'K' }] },
+    { q: "Я запоминаю людей по:", options: [{ text: "Их лицу (внешности)", style: 'V' },{ text: "Их имени или голосу", style: 'A' },{ text: "Где мы встретились или что мы делали", style: 'K' }] },
+    { q: "Когда я читаю инструкции, я:", options: [{ text: "Ищу картинки или иллюстрации", style: 'V' },{ text: "Предпочитаю слушать, как кто-то их объясняет", style: 'A' },{ text: "Люблю пробовать шаги по мере чтения", style: 'K' }] },
+    { q: "Мои записи обычно:", options: [{ text: "Заполнены рисунками, цветами или выделениями", style: 'V' },{ text: "В основном словами, которые я слышал", style: 'A' },{ text: "Пошаговыми действиями или контрольными списками", style: 'K' }] },
+    { q: "При просмотре фильма я более всего обращаю внимание на:", options: [{ text: "Визуальную составляющую, цвета и декорации", style: 'V' },{ text: "Саундтрек и диалоги", style: 'A' },{ text: "Действия и движения персонажа", style: 'K' }] },
+    { q: "Я лучше запоминаю, когда:", options: [{ text: "Вижу информацию на экране или бумаге", style: 'V' },{ text: "Слышу ее вслух", style: 'A' },{ text: "Делаю это физически", style: 'K' }] },
+    { q: "Готовясь к экзамену обследование, я:", options: [{ text: "Создаю майнд-мэпы или использую карточки", style: 'V' },{ text: "Читаю заметки вслух или слушаю записи", style: 'A' },{ text: "Практикую задачи или использую реальные примеры", style: 'K' }] },
+    { q: "Если я учу танец или спорт, я предпочитаю:", options: [{ text: "Смотреть, как кто-то выполняет это", style: 'V' },{ text: "Слушать устные инструкции", style: 'A' },{ text: "Практиковать движения самостоятельно", style: 'K' }] },
+    { q: "В групповой работе я обычно:", options: [{ text: "Берусь за создание визуальных материалов", style: 'V' },{ text: "Веду обсуждения или объясняю идеи", style: 'A' },{ text: "Организую мероприятия или эксперименты", style: 'K' }] },
+    { q: "При чтении рассказа я представляю:", options: [{ text: "Детальные образы сцен и персонажей", style: 'V' },{ text: "Как звучат и говорят персонажи", style: 'A' },{ text: "Действия и движения, происходящие в сюжете", style: 'K' }] },
+    { q: "Если я потерялся в городе, я предпочту:", options: [{ text: "Использовать карту или GPS", style: 'V' },{ text: "Спросить у кого-то дорогу", style: 'A' },{ text: "Пойти пешком и исследовать", style: 'K' }] },
+    { q: "В свободное время я обычно:", options: [{ text: "Рисую, проектирую или смотрю видео", style: 'V' },{ text: "Слушаю подкасты или музыку", style: 'A' },{ text: "Занимаюсь спортом, готовлю или делаю DIY проекты", style: 'K' }] }
+  ]
+};
+
+/* LEARNER STRATEGIES (English; can be localized later) */
+const LEARNER_STRATEGIES = {
+    V: { name: "Visual (Spatial) Learner", description: "You learn best by seeing and observing. Visual aids, diagrams, and colour-coding are essential for your understanding and memory.", strategies: ["Use mind maps, charts, and diagrams to summarize notes.","Colour-code your notes, textbooks, and flashcards to group related ideas.","Watch videos and educational films related to your subject.","Sit where you can clearly see the teacher and any visual presentations."] },
+    A: { name: "Auditory (Aural) Learner", description: "You learn best by hearing and listening. You excel in lectures, discussions, and when information is presented verbally.", strategies: ["Record lectures and listen to them later.","Read your notes aloud to yourself.","Participate actively in group discussions and debates.","Use rhymes, mnemonics, or songs to memorize information."] },
+    K: { name: "Kinesthetic (Physical) Learner", description: "You learn best by doing and experiencing. Hands-on activities, movement, and practical application solidify your understanding.", strategies: ["Take frequent, short breaks to move around.","Use flashcards to manipulate and sort physical objects.","Study in short blocks of time and integrate movement (e.g., walking while reading).","Build models, perform experiments, or role-play concepts."] },
+    };
+
+/* STATE */
+let currentQuestionIndex = 0;
+let scores = { V:0, A:0, K:0 };
+let username = "";
+let selectedSubject = "programming";
+let selectedLanguage = "en";
+let translations = LANGUAGES['en'];
+
+/* DOM UTILITIES */
+function populateLanguageDropdown() {
+    const dropdown = document.getElementById('language');
+    for (const code in LANGUAGES) {
+        const option = document.createElement('option');
+        option.value = code;
+        option.textContent = LANGUAGES[code].name;
+        dropdown.appendChild(option);
+    }
+}
+
+/* Render question using manual translations when available, fallback to English */
+function renderQuestion(index) {
+    const quizForm = document.getElementById('quiz-form');
+    const lang = selectedLanguage || 'en';
+    const langQuestions = TRANSLATED_QUESTIONS[lang];
+    let questionData;
+    if (langQuestions && langQuestions[index]) {
+        questionData = langQuestions[index];
+    } else {
+        questionData = VAKR_QUESTIONS_EN[index];
+    }
+
+    quizForm.innerHTML = '';
+    if (!questionData) return;
+
+    const qContainer = document.createElement('div');
+    qContainer.className = 'question-container';
+    qContainer.id = `q-${index}`;
+
+    const qText = document.createElement('h3');
+    qText.textContent = `${index + 1}. ${questionData.q}`;
+    qContainer.appendChild(qText);
+
+    const optionsGroup = document.createElement('div');
+    optionsGroup.className = 'option-group';
+
+    questionData.options.forEach((option, optionIndex) => {
+        const label = document.createElement('label');
+        label.className = 'option-label';
+
+        const radio = document.createElement('input');
+        radio.type = 'radio';
+        radio.name = `q${index}`;
+        radio.value = option.style;
+        radio.onchange = () => document.getElementById('next-question-btn').disabled = false;
+
+        label.appendChild(radio);
+        label.appendChild(document.createTextNode(option.text));
+        optionsGroup.appendChild(label);
+    });
+
+    qContainer.appendChild(optionsGroup);
+    quizForm.appendChild(qContainer);
+
+    document.getElementById('next-question-btn').textContent = translations.next;
+    document.getElementById('next-question-btn').disabled = true;
+}
+
+/* Calculate results */
+function calculateResults() {
+    let maxScore = -1;
+    let resultStyle = '';
+    for (const style in scores) {
+        if (scores[style] > maxScore) {
+            maxScore = scores[style];
+            resultStyle = style;
+        }
+    }
+    return resultStyle;
+}
+
+/* Update localization */
+function updateLocalization(langCode) {
+    translations = LANGUAGES[langCode] || LANGUAGES['en'];
+    document.getElementById('login-heading').textContent = translations.login;
+    document.getElementById('login-subtitle').textContent = translations.subtitle;
+    document.getElementById('username-label').textContent = translations.username;
+    document.getElementById('language-label').textContent = translations.language;
+    document.getElementById('start-quiz-btn').textContent = translations.start;
+    document.getElementById('results-heading').textContent = translations.result;
+    document.getElementById('retake-quiz-btn').textContent = translations.retake;
+    document.getElementById('share-results-btn').textContent = translations.share;
+    document.getElementById('speak-button-text').textContent = translations.read;
+    const isDark = document.body.classList.contains('dark-mode');
+    document.getElementById('mode-text').textContent = isDark ? translations.mode : translations.lightMode || LANGUAGES['en'].lightMode;
+    if (document.getElementById('quiz-page').style.display !== 'none') {
+        renderQuestion(currentQuestionIndex);
+        document.getElementById('next-question-btn').textContent = translations.next;
+    }
+}
+
+async function translateText(text, targetLang) {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    return data[0].map(x => x[0]).join("");
+  } catch {
+    return text;
+  }
+}
+
+async function showResults() {
+  document.getElementById('quiz-page').style.display = 'none';
+  document.getElementById('results-page').style.display = 'block';
+
+  const { primary: dominantStyle, secondary: secondaryStyle, sorted } = getPrimarySecondary();
+  const result = LEARNER_STRATEGIES[dominantStyle];
+
+  document.getElementById('final-style-text').innerHTML =
+    `${username}, ${translations.result.split(" - ")[0]} is: <span style="color:var(--accent-green);">${result.name}</span> (${dominantStyle})`;
+  document.getElementById('style-description').textContent = result.description;
+
+  // Upgrades render
+  renderDistribution(sorted);
+  renderRecommendations(dominantStyle, secondaryStyle);
+  renderPlan(dominantStyle, secondaryStyle);
+
+  const strategyList = document.getElementById('strategy-list');
+  strategyList.innerHTML = '';
+  result.strategies.forEach(strategy => {
+    const li = document.createElement('li');
+    li.textContent = strategy;
+    strategyList.appendChild(li);
+  });
+
+  // Translate results & strategies dynamically (skip for English)
+    // ✅ Translate EVERYTHING on results page (including new sections)
+  if (selectedLanguage !== "en") {
+
+    // --- existing analysis translation ---
+    const final = document.getElementById("final-style-text");
+    const desc = document.getElementById("style-description");
+    const strategyHeading = document.getElementById("strategy-heading");
+    const strategyItems = document.querySelectorAll("#strategy-list li");
+
+    final.innerHTML = await translateText(final.innerHTML, selectedLanguage);
+    desc.textContent = await translateText(desc.textContent, selectedLanguage);
+    strategyHeading.textContent = await translateText(strategyHeading.textContent, selectedLanguage);
+
+    for (const li of strategyItems) {
+      li.textContent = await translateText(li.textContent, selectedLanguage);
+    }
+
+    // --- ✅ NEW: translate score distribution title + meta labels ---
+    const distHeading = document.getElementById("distribution-heading");
+    if (distHeading) distHeading.textContent = await translateText(distHeading.textContent, selectedLanguage);
+
+    const distMeta = document.getElementById("distribution-meta");
+    if (distMeta) distMeta.innerHTML = await translateText(distMeta.innerHTML, selectedLanguage);
+
+    // --- ✅ NEW: translate subject recommendation title + list items ---
+    const recHeading = document.getElementById("recommendations-heading");
+    if (recHeading) recHeading.textContent = await translateText(recHeading.textContent, selectedLanguage);
+
+    const recItems = document.querySelectorAll("#recommendations-list li");
+    for (const li of recItems) {
+      li.textContent = await translateText(li.textContent, selectedLanguage);
+    }
+
+    // --- ✅ NEW: translate 7-day plan title + day/task text ---
+    const planHeading = document.getElementById("plan-heading");
+    if (planHeading) planHeading.textContent = await translateText(planHeading.textContent, selectedLanguage);
+
+    const planDays = document.querySelectorAll("#plan-list .plan-day");
+    const planTasks = document.querySelectorAll("#plan-list .plan-task");
+
+    for (const d of planDays) {
+      d.textContent = await translateText(d.textContent, selectedLanguage);
+    }
+    for (const t of planTasks) {
+      t.textContent = await translateText(t.textContent, selectedLanguage);
+    }
+  }
+
+}
+// ---- End Corrected Multilingual Result + Strategy Translation ----
+
+
+/* --- VIDIT Upgrades: Primary/Secondary + Distribution + Subject Recommendations + 7-Day Plan --- */
+function getSortedStyles() {
+  const entries = Object.entries(scores).map(([k,v]) => [k, v]);
+  entries.sort((a,b) => b[1] - a[1]);
+  return entries;
+}
+function getPrimarySecondary() {
+  const sorted = getSortedStyles();
+  const primary = sorted[0]?.[0] || "V";
+  const secondary = sorted[1]?.[0] || primary;
+  return { primary, secondary, sorted };
+}
+function styleFullName(code){
+  const map = {V:"Visual", A:"Auditory", K:"Kinesthetic"};
+  return map[code] || code;
+}
+
+const SUBJECT_RECS = {
+  programming: {
+    V: ["Use flowcharts for logic (if/else/loops).", "Watch short visual code walkthroughs (5–10 min) then rewrite from memory.", "Draw a mini system diagram before coding (input → process → output)."],
+    A: ["Explain your code out loud (rubber duck method).", "Listen to short lectures/podcasts on concepts (DSA, OOP) then summarize.", "Pair study: discuss solutions before writing code."],
+    K: ["Build tiny projects (calculator, to-do, login page) for every concept.", "Learn by debugging: break code on purpose and fix it.", "Practice daily on small coding challenges."],
+    R: ["Write clean notes: syntax + pattern + example.", "Read official docs and write your own cheat sheet.", "Convert concepts into flashcards (terms + usage)."]
+  },
+  math: {
+    V: ["Use diagrams/graphs for problems.", "Color-code steps and formulas.", "Create formula maps (topic → rules → examples)."],
+    A: ["Teach the solution aloud step-by-step.", "Use rhythmic recall (say formulas repeatedly).", "Discuss problem approaches with a friend."],
+    K: ["Solve many variations of the same problem.", "Use physical examples (coins, objects) for probability/sets.", "Timed practice + correction loop."],
+    R: ["Write structured solutions with headings.", "Maintain an error-log notebook.", "Summarize each chapter in 1 page."]
+  },
+  biology: {
+    V: ["Use labeled diagrams and mindmaps.", "Watch animations for processes (cell cycle, DNA).", "Make image-based flashcards."],
+    A: ["Record yourself explaining topics.", "Listen to short lectures then recall without notes.", "Group discussion to reinforce memory."],
+    K: ["Draw and label repeatedly + active recall quizzes.", "Teach + demonstrate with gestures.", "Practice with MCQs daily."],
+    R: ["Read standard text and make concise notes.", "Create Q/A sheets per chapter.", "Daily revision summaries."]
+  },
+  history: {
+    V: ["Make timelines and event maps.", "Use charts for cause-effect links.", "Watch documentaries with notes."],
+    A: ["Storytelling method: narrate events like a movie.", "Listen to lectures and summarize immediately.", "Debate perspectives (why it happened)."],
+    K: ["Write timeline cards and arrange them physically.", "Do mock tests + fix weak areas.", "Roleplay speeches / events for memory."],
+    R: ["Write structured notes (who/what/why/impact).", "Make 1-page chapter summaries.", "Practice answer writing regularly."]
+  },
+  language: {
+    V: ["Use picture vocab + mindmaps.", "Watch subtitled videos and note patterns.", "Highlight grammar patterns in examples."],
+    A: ["Shadowing: repeat after native audio.", "Daily speaking practice (2–5 min).", "Use songs/podcasts for listening."],
+    K: ["Use vocabulary in real sentences immediately.", "Do roleplay dialogues.", "Speak/write daily challenges."],
+    R: ["Read short articles and summarize.", "Write daily journal entries.", "Build spaced repetition flashcards."]
+  },
+  business: {
+    V: ["Use framework charts (SWOT, 4Ps).", "Turn chapters into diagrams.", "Study with slide summaries."],
+    A: ["Discuss case studies aloud.", "Explain concepts as if teaching.", "Listen to business podcasts and extract key points."],
+    K: ["Solve real case problems.", "Create mini presentations.", "Apply concepts to brands you know."],
+    R: ["Write structured notes with definitions + examples.", "Make revision sheets for each framework.", "Practice short-answer writing."]
+  }
+};
+
+function renderRecommendations(primary, secondary) {
+  const list = document.getElementById('recommendations-list');
+  if(!list) return;
+  list.innerHTML = '';
+  const subj = selectedSubject || 'programming';
+  const recsPrimary = (SUBJECT_RECS[subj] && SUBJECT_RECS[subj][primary]) ? SUBJECT_RECS[subj][primary] : [];
+  const recsSecondary = (SUBJECT_RECS[subj] && SUBJECT_RECS[subj][secondary]) ? SUBJECT_RECS[subj][secondary] : [];
+  const merged = [...recsPrimary.slice(0,2), ...recsSecondary.slice(0,1)];
+  merged.forEach(t=>{
+    const li=document.createElement('li');
+    li.textContent=t;
+    list.appendChild(li);
+  });
+}
+
+function renderDistribution(sorted) {
+  // VAK only: remove R from graph
+  sorted = (sorted || []).filter(([code,_]) => code !== 'R');
+  const wrap = document.getElementById('distribution-bars');
+  const meta = document.getElementById('distribution-meta');
+  if(!wrap || !meta) return;
+
+  const total = sorted.reduce((s, [,v])=>s+v, 0) || 1;
+  wrap.innerHTML = '';
+
+  sorted.forEach(([code,val])=>{
+    const pct = Math.round((val/total)*100);
+    const row=document.createElement('div');
+    row.className='bar-row';
+
+    const label=document.createElement('div');
+    label.className='bar-label';
+    label.textContent=code;
+
+    const track=document.createElement('div');
+    track.className='bar-track';
+
+    const fill=document.createElement('div');
+    fill.className='bar-fill';
+    fill.style.width = '0%';
+
+    track.appendChild(fill);
+
+    const value=document.createElement('div');
+    value.className='bar-value';
+    value.textContent=`${val} (${pct}%)`;
+
+    row.appendChild(label);
+    row.appendChild(track);
+    row.appendChild(value);
+    wrap.appendChild(row);
+
+    requestAnimationFrame(()=>{ fill.style.width = pct + '%'; });
+  });
+
+  const primary = sorted[0]?.[0] || "V";
+  const secondary = sorted[1]?.[0] || primary;
+  meta.innerHTML = `<b>Primary:</b> ${styleFullName(primary)} (${primary}) &nbsp;&nbsp; <b>Secondary:</b> ${styleFullName(secondary)} (${secondary})`;
+}
+
+function build7DayPlan(primary, secondary) {
+  const subj = selectedSubject || 'programming';
+  const base = {
+    V: ["Create a visual overview (mindmap/diagram).", "Study using videos/infographics + screenshot-notes.", "Convert the topic into 5 visuals (charts/steps)."],
+    A: ["Listen/learn and explain aloud after each section.", "Use teach-back: record 2 min summary.", "Do a short discussion or verbal recall session."],
+    K: ["Do hands-on practice (problems/tasks/projects).", "Learn by fixing mistakes (retry loop).", "Build something small with the concept."],
+    R: ["Write structured notes and summarize in your words.", "Read from a good source and create flashcards.", "Solve by writing full solutions/answers."]
+  };
+  const subjectAddOn = {
+    programming: ["Write code for a tiny feature.", "Refactor it cleanly + comment.", "Do 3 short problems related to it."],
+    math: ["Solve 10 problems and mark mistakes.", "Redo wrong ones without looking.", "Do a timed mini-test (15 min)."],
+    biology: ["Draw and label the process.", "Do 20 MCQs for recall.", "Teach the topic in 3 mins."],
+    history: ["Make a timeline + key events.", "Practice 2 long answers.", "Revise using 1-page summary."],
+    language: ["Learn 15 words + use in sentences.", "Speak 5 mins using new words.", "Do listening + shadowing 10 mins."],
+    business: ["Apply a framework to a real company.", "Write a case response in 150 words.", "Make a 5-slide summary."],
+  };
+  const p = base[primary] || base.V;
+  const s = base[secondary] || base.A;
+  const add = subjectAddOn[subj] || subjectAddOn.programming;
+
+  return [
+    {day:1, task:`${p[0]} + ${add[0]}`},
+    {day:2, task:`${p[1]} + quick recap (5 bullet points).`},
+    {day:3, task:`${p[2]} + ${add[2]}`},
+    {day:4, task:`Secondary focus: ${s[0]} + 10-minute review.`},
+    {day:5, task:`Mix: ${p[1]} then ${s[2]}`},
+    {day:6, task:`Active recall: short quiz/test + fix mistakes.`},
+    {day:7, task:`Final review: 1-page summary + teach-back + mini test.`}
+  ];
+}
+
+function renderPlan(primary, secondary) {
+  const wrap=document.getElementById('plan-list');
+  if(!wrap) return;
+  wrap.innerHTML='';
+  const plan=build7DayPlan(primary, secondary);
+  plan.forEach(item=>{
+    const div=document.createElement('div');
+    div.className='plan-item';
+    div.innerHTML = `<div class="plan-day">Day ${item.day}</div><div class="plan-task">${item.task}</div>`;
+    wrap.appendChild(div);
+  });
+}
+/* --- End Upgrades --- */
+
+/* Event listeners */
+document.getElementById('login-form').addEventListener('submit', function(e) {
+    e.preventDefault();
+    username = document.getElementById('username').value.trim() || "User";
+    selectedLanguage = document.getElementById('language').value || 'en';
+    selectedSubject = document.getElementById('subject').value || 'programming';
+    updateLocalization(selectedLanguage);
+
+    document.getElementById('login-page').style.display = 'none';
+    document.getElementById('results-page').style.display = 'none';
+    document.getElementById('quiz-page').style.display = 'block';
+
+    currentQuestionIndex = 0;
+    scores = { V:0, A:0, K:0 };
+    renderQuestion(currentQuestionIndex);
+});
+
+document.getElementById('next-question-btn').addEventListener('click', function() {
+    const currentQuestionName = `q${currentQuestionIndex}`;
+    const selectedOption = document.querySelector(`input[name="${currentQuestionName}"]:checked`);
+    if (!selectedOption) {
+        alert(translations.next + " — please select an option.");
+        return;
+    }
+    const style = selectedOption.value;
+    scores[style] = scores[style] + 1;
+
+    currentQuestionIndex++;
+    if (currentQuestionIndex < VAKR_QUESTIONS_EN.length) {
+        renderQuestion(currentQuestionIndex);
+    } else {
+        showResults();
+    }
+});
+
+document.getElementById('retake-quiz-btn').addEventListener('click', function(){
+    document.getElementById('results-page').style.display = 'none';
+    document.getElementById('quiz-page').style.display = 'block';
+    currentQuestionIndex = 0;
+    scores = { V:0, A:0, K:0 };
+    renderQuestion(currentQuestionIndex);
+});
+
+document.getElementById('share-results-btn').addEventListener('click', async function() {
+  const email = prompt("Enter the email address you want to share your results with:");
+  if (!email) return;
+
+  const dominantStyle = calculateResults();
+  const result = LEARNER_STRATEGIES[dominantStyle];
+
+  const templateParams = {
+    username: username,
+    email: email,
+    style: result.name,
+    description: result.description,
+    strategies: result.strategies.join("\\n- ")
+  };
+
+  try {
+    await emailjs.send("service_y3kiaab", "template_62xxcoe", templateParams);
+    alert("✅ Result sent successfully!");
+  } catch (error) {
+    console.error(error);
+    alert("❌ Failed to send email. Please check your EmailJS credentials.");
+  }
+});
+
+
+
+/* TTS */
+document.getElementById('speak-results-btn').addEventListener('click', function(){
+    if (!('speechSynthesis' in window)) {
+        alert('Text-to-Speech not supported in your browser.');
+        return;
+    }
+    const final = document.getElementById('final-style-text').textContent;
+    const desc = document.getElementById('style-description').textContent;
+    const utter = new SpeechSynthesisUtterance(final + ". " + desc);
+    utter.lang = selectedLanguage || 'en';
+    const voices = speechSynthesis.getVoices();
+    const match = voices.find(v => v.lang.toLowerCase().startsWith((selectedLanguage || 'en').toLowerCase()));
+    if (match) utter.voice = match;
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+});
+
+/* Dark/light toggle */
+document.getElementById('mode-switch').addEventListener('change', function(e){
+    const isDark = e.target.checked;
+    document.body.classList.toggle('light-mode', !isDark);
+    document.body.classList.toggle('dark-mode', isDark);
+    const lang = document.getElementById('language').value || 'en';
+    const t = LANGUAGES[lang] || LANGUAGES['en'];
+    document.getElementById('mode-text').textContent = isDark ? t.mode : t.lightMode || LANGUAGES['en'].lightMode;
+});
+
+/* Init */
+window.onload = function(){
+    populateLanguageDropdown();
+    document.body.classList.add('dark-mode');
+    selectedLanguage = 'en';
+    updateLocalization('en');
+};
+
+// ---- Automatic Result Translation ----
+async function translateText(text, targetLang) {
+  const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=${targetLang}&dt=t&q=${encodeURIComponent(text)}`;
+  try {
+    const res = await fetch(url);
+    const data = await res.json();
+    return data[0].map(x => x[0]).join("");
+  } catch {
+    return text;
+  }
+}
+
+// Wrap original showResults and add translation
+const _showResults = showResults;
+showResults = async function () {
+  _showResults();
+  if (selectedLanguage === "en") return;
+
+  const final = document.getElementById("final-style-text");
+  const desc = document.getElementById("style-description");
+  const listItems = document.querySelectorAll("#strategy-list li");
+  const heading = document.getElementById("strategy-heading");
+
+  final.innerHTML = await translateText(final.innerHTML, selectedLanguage);
+  desc.textContent = await translateText(desc.textContent, selectedLanguage);
+  heading.textContent = await translateText(heading.textContent, selectedLanguage);
+
+  for (const li of listItems) {
+    li.textContent = await translateText(li.textContent, selectedLanguage);
+  }
+};
+// ---- End Automatic Result Translation ----
+
+</script>
+</body>
+</html>
